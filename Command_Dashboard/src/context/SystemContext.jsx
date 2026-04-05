@@ -228,7 +228,9 @@ export const SystemProvider = ({ children }) => {
 
   // ── AUTO-CONNECT to socket relay on mount ──
   useEffect(() => {
-    const serverUrl = `http://${window.location.hostname}:5001`;
+    // DYNAMIC HOST: Laptop uses localhost/192.168.137.1, Phone uses 192.168.137.1
+    const serverHost = window.location.hostname;
+    const serverUrl = `http://${serverHost}:5001`;
     console.log('📡 Auto-connecting to socket relay:', serverUrl);
     const newSocket = io(serverUrl);
     setSocket(newSocket);
@@ -239,7 +241,8 @@ export const SystemProvider = ({ children }) => {
 
   const connectSystem = () => {
     if (!socket) {
-      const serverUrl = `http://${window.location.hostname}:5001`;
+      const serverHost = window.location.hostname;
+      const serverUrl = `http://${serverHost}:5001`;
       setSocket(io(serverUrl));
     }
   };
@@ -263,6 +266,10 @@ export const SystemProvider = ({ children }) => {
       encryption: 'LINKING...'
     });
   };
+
+  // ── NEW: Global Tactical Hub Status (Linking, Online, Busy, Error) ──
+  const [peerStatus, setPeerStatus] = useState('LINKING');
+  const [uplinkStream, setUplinkStream] = useState(null);
 
   const value = {
     isConnected,
@@ -288,7 +295,11 @@ export const SystemProvider = ({ children }) => {
     activeMission,
     setActiveMission,
     activeMissions,
-    setActiveMissions
+    setActiveMissions,
+    uplinkStream,
+    setUplinkStream,
+    peerStatus,
+    setPeerStatus
   };
 
   return (

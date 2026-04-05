@@ -46,7 +46,7 @@ const createDroneIcon = (color) => L.divIcon({
     <div class="relative flex items-center justify-center">
       <div class="absolute w-24 h-24 rounded-full bg-cyan-500/10 border border-cyan-500/20"></div>
       <div class="w-8 h-8 rounded-full border border-cyan-400 bg-black/80 flex items-center justify-center shadow-[0_0_15px_${color}]">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400"><path d="M20 10c0-4.4-3.6-8-8-8s-8 3.6-8 8"/><path d="M2 10h20"/><path d="m15 10-3 3-3-3"/><path d="M12 13v8"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-house-icon lucide-map-pin-house"><path d="M15 22a1 1 0 0 1-1-1v-4a1 1 0 0 1 .445-.832l3-2a1 1 0 0 1 1.11 0l3 2A1 1 0 0 1 22 17v4a1 1 0 0 1-1 1z"/><path d="M18 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 .601.2"/><path d="M18 22v-3"/><circle cx="10" cy="10" r="3"/></svg>
       </div>
     </div>
   `,
@@ -188,8 +188,25 @@ const CommandMap = ({ mapState, isTactical = false, onDeployClick, children }) =
           attribution={mapStyles[mapTheme].attribution}
         />
 
+        {/* GREEN HILL No-Fly Zone Visualization */}
+        <Circle
+          center={[18.524344, 73.800499]}
+          radius={1200}
+          pathOptions={{
+            color: '#ef4444',
+            fillColor: '#ef4444',
+            fillOpacity: 0.1,
+            weight: 2,
+            dashArray: '5, 10'
+          }}
+        >
+          <Tooltip permanent direction="top" className="bg-transparent border-none shadow-none text-[10px] font-bold text-red-500 uppercase tracking-tighter">
+            NO-FLY ZONE: GREEN HILL
+          </Tooltip>
+        </Circle>
+
         <MapController center={center} zoom={zoom} isTactical={isTactical} />
-        
+
         {activeMissions && activeMissions.map(m => (
           <FlightAnimationLayer key={m.id} mission={m} />
         ))}
@@ -205,76 +222,76 @@ const CommandMap = ({ mapState, isTactical = false, onDeployClick, children }) =
           }
 
           return (
-          <Marker
-            key={marker.id}
-            position={marker.pos}
-            icon={marker.type === 'SOS_MARKER' ? createSosIcon(marker.label?.replace(/[\[\]]/g, '')) : (icons[marker.type] || icons.HUB)}
-          >
-            {marker.type === 'SOS_MARKER' ? (
-              <Popup className="tactical-popup custom-pop-red" maxWidth={300}>
-                <div className="bg-[#1a0a0a]/95 backdrop-blur-md border border-red-500/50 rounded-xl p-5 text-white shadow-2xl">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-red-500/30 border border-red-500/50 flex items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.3)] animate-pulse">
-                      <span className="text-lg">🚨</span>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-red-400 font-black uppercase tracking-widest leading-none mb-1">MOBILE SOS ALERT</div>
-                      <div className="text-sm font-black text-white">{marker.label?.replace(/[\[\]]/g, '')}</div>
-                    </div>
-                  </div>
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center gap-3">
-                      <Navigation className="w-4 h-4 text-zinc-500" />
-                      <span className="text-xs font-bold text-zinc-400 tabular-nums">{marker.pos[0].toFixed(4)}° N, {marker.pos[1].toFixed(4)}° E</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => { if (onDeployClick) onDeployClick(); }}
-                    className="w-full bg-red-500 hover:bg-red-400 text-white font-black text-xs py-3 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 shadow-[0_0_20px_rgba(239,68,68,0.3)]"
-                  >
-                    🚁 DEPLOY DRONE NOW
-                  </button>
-                </div>
-              </Popup>
-            ) : marker.type === 'TARGET' ? (
-              <Popup className="tactical-popup custom-pop-red" maxWidth={300}>
-                <div className="bg-[#18181b]/95 backdrop-blur-md border border-red-500/50 rounded-xl p-5 text-white shadow-2xl">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center shadow-[0_0_15px_rgba(239,68,68,0.2)]">
-                      <Phone className="w-5 h-5 text-red-500" />
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-red-500 font-black uppercase tracking-widest leading-none mb-1">Incoming Alert</div>
-                      <div className="text-sm font-black text-white">Case ID: 2667(9)8B05DEY</div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 mb-5">
-                    <div className="flex items-center gap-3">
-                      <Navigation className="w-4 h-4 text-zinc-600" />
-                      <span className="text-xs font-bold text-zinc-400 tabular-nums">47.6061° N, 122.3328° W</span>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="text-xs font-black text-zinc-600 uppercase mt-0.5">Addr:</div>
-                      <div className="text-xs font-bold text-zinc-300 leading-relaxed">
-                        6316 N 83rd St, Redmond, WA<br />98052, USA
+            <Marker
+              key={marker.id}
+              position={marker.pos}
+              icon={marker.type === 'SOS_MARKER' ? createSosIcon(marker.label?.replace(/[\[\]]/g, '')) : (icons[marker.type] || icons.HUB)}
+            >
+              {marker.type === 'SOS_MARKER' ? (
+                <Popup className="tactical-popup custom-pop-red" maxWidth={300}>
+                  <div className="bg-[#1a0a0a]/95 backdrop-blur-md border border-red-500/50 rounded-xl p-5 text-white shadow-2xl">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-red-500/30 border border-red-500/50 flex items-center justify-center shadow-[0_0_20px_rgba(239,68,68,0.3)] animate-pulse">
+                        <span className="text-lg">🚨</span>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-red-400 font-black uppercase tracking-widest leading-none mb-1">MOBILE SOS ALERT</div>
+                        <div className="text-sm font-black text-white">{marker.label?.replace(/[\[\]]/g, '')}</div>
                       </div>
                     </div>
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center gap-3">
+                        <Navigation className="w-4 h-4 text-zinc-500" />
+                        <span className="text-xs font-bold text-zinc-400 tabular-nums">{marker.pos[0].toFixed(4)}° N, {marker.pos[1].toFixed(4)}° E</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => { if (onDeployClick) onDeployClick(); }}
+                      className="w-full bg-red-500 hover:bg-red-400 text-white font-black text-xs py-3 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 shadow-[0_0_20px_rgba(239,68,68,0.3)]"
+                    >
+                      🚁 DEPLOY DRONE NOW
+                    </button>
                   </div>
+                </Popup>
+              ) : marker.type === 'TARGET' ? (
+                <Popup className="tactical-popup custom-pop-red" maxWidth={300}>
+                  <div className="bg-[#18181b]/95 backdrop-blur-md border border-red-500/50 rounded-xl p-5 text-white shadow-2xl">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center shadow-[0_0_15px_rgba(239,68,68,0.2)]">
+                        <Phone className="w-5 h-5 text-red-500" />
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-red-500 font-black uppercase tracking-widest leading-none mb-1">Incoming Alert</div>
+                        <div className="text-sm font-black text-white">Case ID: 2667(9)8B05DEY</div>
+                      </div>
+                    </div>
 
-                  <button
-                    onClick={() => {
-                      console.log("MARKER DEPLOY CLICKED");
-                      if (onDeployClick) onDeployClick();
-                    }}
-                    className="w-full bg-cyan-400 hover:bg-cyan-300 text-black font-black text-xs py-3 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 shadow-[0_0_20px_rgba(0,229,255,0.3)]"
-                  >
-                    DEPLOY DRONE
-                  </button>
-                </div>
-              </Popup>
-            ) : null}
-          </Marker>
+                    <div className="space-y-3 mb-5">
+                      <div className="flex items-center gap-3">
+                        <Navigation className="w-4 h-4 text-zinc-600" />
+                        <span className="text-xs font-bold text-zinc-400 tabular-nums">47.6061° N, 122.3328° W</span>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="text-xs font-black text-zinc-600 uppercase mt-0.5">Addr:</div>
+                        <div className="text-xs font-bold text-zinc-300 leading-relaxed">
+                          6316 N 83rd St, Redmond, WA<br />98052, USA
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        console.log("MARKER DEPLOY CLICKED");
+                        if (onDeployClick) onDeployClick();
+                      }}
+                      className="w-full bg-cyan-400 hover:bg-cyan-300 text-black font-black text-xs py-3 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 shadow-[0_0_20px_rgba(0,229,255,0.3)]"
+                    >
+                      DEPLOY DRONE
+                    </button>
+                  </div>
+                </Popup>
+              ) : null}
+            </Marker>
           );
         })}
         {children}
@@ -289,7 +306,7 @@ const CommandMap = ({ mapState, isTactical = false, onDeployClick, children }) =
   }
 
   return (
-    <TacticalPanel title="Command View: Hub" icon={Crosshair} className="h-full relative">
+    <TacticalPanel title="SkyNetra Command View" icon={Crosshair} className="h-full relative">
       {mapContent}
     </TacticalPanel>
   );

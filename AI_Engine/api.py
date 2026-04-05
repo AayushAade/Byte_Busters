@@ -17,7 +17,7 @@ except ImportError:
     print("⚠️ google-genai not found. Please run: pip install google-genai")
 
 load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY", "AIzaSyCZ5U5Uvd502HavFFIYFwgmi8GJpFqQASM")
+api_key = os.getenv("GEMINI_API_KEY", "Api")
 client = genai.Client(api_key=api_key) if api_key else None
 
 app = FastAPI(title="SkyNetra AI Engine", description="Video Analysis using Gemini")

@@ -43,37 +43,53 @@ DRONE_FLEET = [
     {"id": "Kothrud Drone", "name": "Kothrud Station", "lat": 18.5074, "lng": 73.8077, "status": "AVAILABLE", "battery": 90, "current_severity": 0}
 ]
 
-NO_FLY_ZONES = [
-    # A simulated square roughly covering a restricted block
-    [(18.5150, 73.8520), (18.5180, 73.8520), (18.5180, 73.8550), (18.5150, 73.8550)]
+# Circular No-Fly Zones: (lat, lng, radius_km)
+CIRCULAR_NO_FLY_ZONES = [
+    {"id": "GREEN_HILL", "lat": 18.524344, "lng": 73.800499, "radius": 1.2} # 1200m radius
 ]
 
 def calculate_distance(lat1, lon1, lat2, lon2):
     R = 6371 # Earth radius in km
-    dlat = math.radians(lat2 - lat1)
-    dlon = math.radians(lon2 - lon1)
-    a = (math.sin(dlat / 2) ** 2 +
-         math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2)
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    return R * c
+    try:
+        dlat = math.radians(lat2 - lat1)
+        dlon = math.radians(lon2 - lon1)
+        a = (math.sin(dlat / 2) ** 2 +
+             math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2)
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        return R * c
+    except:
+        return 0
 
-def lines_intersect(p1, p2, p3, p4):
-    def ccw(A, B, C):
-        return (C[1]-A[1]) * (B[0]-A[0]) > (B[1]-A[1]) * (C[0]-A[0])
-    return ccw(p1, p3, p4) != ccw(p2, p3, p4) and ccw(p1, p2, p3) != ccw(p1, p2, p4)
+def line_intersects_circle(p1, p2, circle_center, radius):
+    """Checks if line segment p1-p2 intersects/crosses a circle."""
+    x1, y1 = p1
+    x2, y2 = p2
+    cx, cy = circle_center
+    
+    # Vector from p1 to p2
+    dx, dy = x2 - x1, y2 - y1
+    if dx == 0 and dy == 0:
+        return calculate_distance(x1, y1, cx, cy) <= radius
+
+    # Projection of circle center onto the line p1-p2
+    t = ((cx - x1) * dx + (cy - y1) * dy) / (dx*dx + dy*dy)
+    t = max(0, min(1, t)) # Clamp to segment
+    
+    closest_x = x1 + t * dx
+    closest_y = y1 + t * dy
+    
+    dist = calculate_distance(closest_x, closest_y, cx, cy)
+    return dist <= radius
 
 def check_detour_distance(lat1, lon1, lat2, lon2):
     base_dist = calculate_distance(lat1, lon1, lat2, lon2)
-    # Check if direct line crosses any No-Fly Zone segment
     p1, p2 = (lat1, lon1), (lat2, lon2)
-    intersects = False
-    for zone in NO_FLY_ZONES:
-        for i in range(len(zone)):
-            p3, p4 = zone[i], zone[(i+1)%len(zone)]
-            if lines_intersect(p1, p2, p3, p4):
-                intersects = True
-                break
-    return base_dist * 1.6 if intersects else base_dist
+    
+    for zone in CIRCULAR_NO_FLY_ZONES:
+        if line_intersects_circle(p1, p2, (zone['lat'], zone['lng']), zone['radius']):
+            # High penalty to force avoidance if other drones are available
+            return base_dist * 5.0 
+    return base_dist
 
 def dispatch_drone(user_lat, user_lng, incoming_severity):
     min_dist, best_drone = float('inf'), None

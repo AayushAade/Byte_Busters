@@ -30,76 +30,45 @@ const FeedsView = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#0B0E14] text-[#94A3B8] font-sans overflow-hidden">
-      <header className="h-16 border-b border-white/5 bg-[#0B0E14]/80 backdrop-blur-xl flex items-center justify-between px-6 shrink-0">
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium text-white tracking-tight flex items-center gap-2">
-            Drones online: <span className="bg-[#00E5FF]/20 text-[#00E5FF] px-2 py-0.5 rounded-full text-xs font-bold">9</span>
-          </span>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex bg-white/5 p-1 rounded-lg border border-white/10">
-            <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-[#27272A] text-white shadow-lg' : 'hover:text-white'}`}>
-              <LayoutGrid size={16} />
-            </button>
-            <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-[#27272A] text-white shadow-lg' : 'hover:text-white'}`}>
-              <List size={16} />
-            </button>
-          </div>
-          <div className="flex items-center gap-2 pl-4 border-l border-white/10">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-zinc-700 to-zinc-500 border border-white/20" />
-            <span className="text-sm font-medium text-white hidden sm:block">Aayush Aade</span>
-            <ChevronDown size={14} />
-          </div>
-        </div>
-      </header>
+    <div className="flex flex-col h-screen bg-[#F1F2F6] text-[#1A1A2E] font-sans overflow-hidden">
       
-      <main className="flex-1 overflow-auto p-4 custom-scrollbar">
+      <main className="flex-1 overflow-auto p-8 custom-scrollbar">
         {/* LIST CONTAINER FIX: w-full max-w-5xl mx-auto flex flex-col gap-3 */}
         <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" : "w-full max-w-5xl mx-auto flex flex-col gap-3"}>
           {drones.map((drone, index) => (
             <div 
               key={drone.id} 
               onMouseEnter={() => setActiveDroneId(drone.id)} 
-              className={`group relative rounded-lg overflow-hidden border bg-[#18181B] transition-all duration-300 ${viewMode === 'grid' ? 'aspect-video' : 'p-4 flex items-center w-full'} ${activeDroneId === drone.id ? 'border-[#00E5FF]/50 shadow-[0_0_20px_rgba(0,229,255,0.1)]' : 'border-white/5'}`}
+              className={`group relative rounded-2xl overflow-hidden border bg-white transition-all duration-300 ${viewMode === 'grid' ? 'aspect-video' : 'p-5 flex items-center w-full'} ${activeDroneId === drone.id ? 'border-[#7C3AED]/50 shadow-2xl shadow-purple-500/10 scale-[1.02] z-10' : 'border-slate-100'}`}
             >
               
               {/* === GRID VIEW UI === */}
               {viewMode === 'grid' ? (
                 <>
-                  <div className="absolute inset-0 z-0 flex items-center justify-center bg-[#0B0E14]">
-                    {/* ONLY PLAY VIDEO FOR TILE 0 */}
-                    {/* TEMPORARY DISCONNECT: Commented out the active YoloScanner */}
-                    {/* {index === 0 ? (
-                      <YoloScanner videoSrc="/video/cctv/14737129_3840_2160_50fps.mp4" />
-                    ) : (
-                      <span className="text-zinc-700 font-bold tracking-[0.5em] text-2xl uppercase">STANDBY</span>
-                    )} */}
+                  <div className="absolute inset-0 z-0 flex items-center justify-center bg-slate-50">
                     <div className="flex flex-col items-center gap-2">
-                      <span className="text-zinc-700 font-bold tracking-[0.5em] text-2xl uppercase italic">DISCONNECTED</span>
-                      <span className="text-[10px] font-black text-red-500/50 uppercase tracking-widest leading-none">Awaiting Signal...</span>
+                       <Radio className="w-8 h-8 text-[#7C3AED] opacity-20 animate-pulse" />
+                      <span className="text-slate-300 font-black tracking-[0.4em] text-xl uppercase italic">Standing By</span>
                     </div>
                   </div>
                   
-                  <div className="absolute inset-0 z-10 p-3 flex flex-col justify-between pointer-events-none">
+                  <div className="absolute inset-0 z-10 p-5 flex flex-col justify-between pointer-events-none">
                     <div className="flex justify-between items-start pointer-events-none">
-                      <div className="flex items-center gap-2">
-                        {/* {drone.status === 'LIVE' && <div className="w-1.5 h-1.5 rounded-full bg-[#00E5FF] animate-pulse shadow-[0_0_8px_#00E5FF]" />} */}
-                        <div className="w-1.5 h-1.5 rounded-full bg-red-500/30" />
-                        <span className="text-[11px] font-bold text-white/90 uppercase tracking-wider drop-shadow-md">{drone.id}</span>
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-2 h-2 rounded-full ${drone.status === 'LIVE' ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-slate-300'}`} />
+                        <span className="text-[12px] font-black text-[#1A1A2E] uppercase tracking-wider">{drone.id}</span>
                       </div>
-                      <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
-                        <button className="p-1.5 bg-black/40 backdrop-blur-md rounded border border-white/10 hover:bg-white/10 text-white"><Copy size={13}/></button>
-                        <button onClick={(e) => { e.stopPropagation(); handleFocus(drone); }} className="p-1.5 bg-black/40 backdrop-blur-md rounded border border-white/10 hover:bg-[#00E5FF] hover:text-black text-white transition-colors"><Maximize2 size={13}/></button>
-                        <button className="p-1.5 bg-black/40 backdrop-blur-md rounded border border-white/10 hover:bg-white/10 text-white"><ExternalLink size={13}/></button>
+                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
+                        <button className="p-2 bg-white/90 backdrop-blur-md rounded-xl border border-slate-100 hover:bg-[#EDE9FE] text-[#7C3AED] shadow-lg"><Copy size={14}/></button>
+                        <button onClick={(e) => { e.stopPropagation(); handleFocus(drone); }} className="p-2 bg-[#7C3AED] rounded-xl text-white shadow-lg shadow-purple-500/20 hover:scale-105 transition-all"><Maximize2 size={14}/></button>
                       </div>
                     </div>
                     <div className="flex justify-between items-end pointer-events-none">
-                      <div className="flex gap-3 text-[9px] font-bold uppercase tracking-tighter text-white/60">
-                        <span className="flex items-center gap-1"><Battery size={12} className={'text-zinc-600'} /> {drone.battery}</span>
-                        <span className="flex items-center gap-1"><Activity size={12} className="text-zinc-600" /> {drone.alt}</span>
+                      <div className="flex gap-4 text-[10px] font-black uppercase tracking-widest text-[#64748B]">
+                        <span className="flex items-center gap-1.5"><Battery size={14} className="text-[#10B981]" /> {drone.battery}</span>
+                        <span className="flex items-center gap-1.5"><Activity size={14} className="text-[#7C3AED]" /> {drone.alt}</span>
                       </div>
-                      <div className="text-[8px] font-black text-white/20 uppercase italic tracking-[0.2em]">{drone.type}</div>
+                      <div className="text-[9px] font-black text-slate-300 uppercase italic tracking-[0.2em]">{drone.type}</div>
                     </div>
                   </div>
                 </>
@@ -109,26 +78,26 @@ const FeedsView = () => {
                 <>
                   {/* COLUMN 1: ID */}
                   <div className="flex-1 flex items-center gap-4 relative z-10">
-                    <div className={`w-2 h-2 rounded-full ${drone.status === 'LIVE' ? 'bg-[#00E5FF] animate-pulse shadow-[0_0_8px_#00E5FF]' : 'bg-zinc-600'}`} />
-                    <span className="text-sm font-bold text-white/90 uppercase tracking-wider">{drone.id}</span>
+                    <div className={`w-2.5 h-2.5 rounded-full ${drone.status === 'LIVE' ? 'bg-[#7C3AED] shadow-[0_0_8px_rgba(124,58,237,0.4)] animate-pulse' : 'bg-slate-200'}`} />
+                    <span className="text-sm font-black text-[#1A1A2E] uppercase tracking-wider">{drone.id}</span>
                   </div>
                   
                   {/* COLUMN 2: Telemetry */}
-                  <div className="flex-1 flex justify-center gap-8 text-xs font-bold uppercase tracking-tighter text-white/60 relative z-10">
-                    <span className="flex items-center gap-2 w-20"><Battery size={14} className={drone.status === 'DOCK' ? 'text-red-500' : 'text-emerald-400'} /> {drone.battery}</span>
-                    <span className="flex items-center gap-2 w-20"><Activity size={14} className="text-[#00E5FF]" /> {drone.alt}</span>
+                  <div className="flex-1 flex justify-center gap-10 text-[11px] font-black uppercase tracking-widest text-[#64748B] relative z-10">
+                    <span className="flex items-center gap-2 w-24"><Battery size={16} className={drone.status === 'DOCK' ? 'text-rose-500' : 'text-[#10B981]'} /> {drone.battery}</span>
+                    <span className="flex items-center gap-2 w-24"><Activity size={16} className="text-[#7C3AED]" /> {drone.alt}</span>
                   </div>
-
+ 
                   {/* COLUMN 3: Actions */}
-                  <div className="flex-1 flex justify-end items-center gap-4 relative z-10">
-                    <span className="text-[10px] font-black text-white/20 uppercase italic tracking-[0.2em] hidden sm:block">{drone.type}</span>
-                    <button onClick={(e) => { e.stopPropagation(); handleFocus(drone); }} className="px-4 py-1.5 bg-black/40 backdrop-blur-md rounded border border-white/10 hover:bg-[#00E5FF] hover:text-black text-white transition-colors flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider"><Maximize2 size={13}/> Focus</button>
+                  <div className="flex-1 flex justify-end items-center gap-6 relative z-10">
+                    <span className="text-[10px] font-black text-slate-300 uppercase italic tracking-[0.2em] hidden sm:block">{drone.type}</span>
+                    <button onClick={(e) => { e.stopPropagation(); handleFocus(drone); }} className="px-6 py-2.5 bg-[#7C3AED] text-white rounded-xl shadow-lg shadow-purple-500/20 hover:opacity-90 transition-all flex items-center gap-2 text-[11px] font-black uppercase tracking-widest"><Maximize2 size={14}/> Full Feed</button>
                   </div>
                 </>
               )}
 
-              {/* SHARED SCANLINE EFFECT */}
-              <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+              {/* SHARED SCANLINE EFFECT - More subtle for light theme */}
+              <div className="absolute inset-0 pointer-events-none opacity-[0.015] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%)]" />
             </div>
           ))}
         </div>
@@ -142,17 +111,17 @@ const FeedsView = () => {
 
       {/* FULLSCREEN INVESTIGATION MODAL */}
       {fullscreenDrone && (
-        <div className="absolute inset-0 z-[100] bg-[#0B0E14] flex flex-col animate-in fade-in zoom-in-95 duration-200">
-          <header className="h-14 border-b border-white/10 bg-black/50 flex items-center justify-between px-6 shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-[#00E5FF] animate-pulse shadow-[0_0_8px_#00E5FF]" />
-              <span className="text-white font-bold tracking-[0.2em] uppercase text-sm">
+        <div className="absolute inset-0 z-[100] bg-[#F1F2F6] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+          <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md flex items-center justify-between px-8 shrink-0">
+            <div className="flex items-center gap-4">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#7C3AED] animate-pulse shadow-[0_0_8px_rgba(124,58,237,0.4)]" />
+              <span className="text-[#1A1A2E] font-black tracking-widest uppercase text-sm">
                 {fullscreenDrone.id} - ACTIVE INVESTIGATION
               </span>
             </div>
             <button 
               onClick={() => setFullscreenDrone(null)} 
-              className="px-4 py-1.5 bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white rounded text-xs font-bold tracking-widest uppercase transition-all"
+              className="px-6 py-2 bg-rose-50 text-rose-500 border border-rose-100 hover:bg-rose-500 hover:text-white rounded-xl text-[11px] font-black tracking-widest uppercase transition-all shadow-sm"
             >
               Close Feed
             </button>

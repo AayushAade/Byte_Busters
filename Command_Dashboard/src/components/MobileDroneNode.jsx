@@ -12,6 +12,9 @@ const MobileDroneNode = () => {
   const [mediaStream, setMediaStream] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   
+  // NEW: Overlay for user gesture compliance
+  const [needsGesture, setNeedsGesture] = useState(true);
+
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const socketRef = useRef(null);
@@ -21,17 +24,19 @@ const MobileDroneNode = () => {
 
   // Initialize Socket & Peer Connection
   useEffect(() => {
-    const serverUrl = `http://${window.location.hostname}:5001`;
+    // FORCE HTTP to resolve Mixed Content / SSL Handshake errors
+    const serverHost = '192.168.137.1';
+    const serverUrl = `http://${serverHost}:5001`;
     socketRef.current = io(serverUrl);
     socketRef.current.on('connect', () => console.log('Socket Connected'));
 
     // Initialize WebRTC Peer
     const peerOptions = {
-      host: window.location.hostname,
+      host: serverHost,
       port: 9000,
       path: '/peerjs',
       secure: false,
-      debug: 2,
+      debug: 1,
       config: {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
@@ -55,12 +60,13 @@ const MobileDroneNode = () => {
 
     socketRef.current.peer = peer;
 
-    // Load YOLOv8 Model
+    // Load YOLOv8 Model - UPDATED URL
     const loadModel = async () => {
       try {
         console.log("Loading YOLOv8 Model...");
         await tf.ready();
-        const modelUrl = 'https://quic-solutions.github.io/yolov8-tfjs/yolov8n_web_model/model.json';
+        // Fixed URL pointing to a stable CDN
+        const modelUrl = 'https://cdn.jsdelivr.net/gh/Hyuto/yolov8-tfjs@master/public/yolov8n_web_model/model.json';
         const model = await tf.loadGraphModel(modelUrl);
         modelRef.current = model;
         setModelLoading(false);
@@ -85,6 +91,19 @@ const MobileDroneNode = () => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // NEW: Automated Sequence
+  useEffect(() => {
+    if (!modelLoading && !needsGesture && !isPlaying) {
+      startCamera();
+    }
+  }, [modelLoading, needsGesture, isPlaying]);
+
+  useEffect(() => {
+    if (isPlaying && mediaStream && !isBroadcasting) {
+      startBroadcast();
+    }
+  }, [isPlaying, mediaStream, isBroadcasting]);
 
   // Effect-Driven Stream Attachment (NUCLEAR FIX #2: Vanilla JS Fallback)
   useEffect(() => {
@@ -226,6 +245,7 @@ const MobileDroneNode = () => {
           const maxX = box[3] * canvas.width / 640;
           const width = maxX - minX;
           const height = maxY - minY;
+          const boxIdx = idx;
 
           // Draw Tactical Box
           ctx.strokeStyle = '#22d3ee';
@@ -257,37 +277,48 @@ const MobileDroneNode = () => {
   }, [isPlaying]);
 
 
-  const startBroadcast = () => {
-    if (!isPlaying || !mediaStream) {
-      alert("ACTIVATE CAMERA FIRST.");
+  const startBroadcast = async () => {
+    if (!mediaStream || !socketRef.current.peer) {
+      console.warn('Cannot broadcast: Stream or Peer not ready.');
       return;
     }
-    
-    setIsBroadcasting(true);
-    
-    // WebRTC Peer Call - Establish Direct P2P Video Link
-    const peer = socketRef.current.peer;
-    if (peer) {
-      console.log('Initiating WebRTC Uplink to skynetra-hub-01...');
+
+    try {
+      const peer = socketRef.current.peer;
+      console.log('📡 Attempting Tactical Uplink to Hub...');
+      setIsBroadcasting(true);
+
       const call = peer.call('skynetra-hub-01', mediaStream);
       
+      if (!call) {
+        throw new Error('Call initialization failed');
+      }
+
       call.on('stream', () => {
-        console.log('Uplink confirmed by Hub. Streaming data...');
+        console.log('✅ Uplink confirmed by Hub');
         setIsBroadcasting(true);
       });
 
       call.on('error', (err) => {
-        console.error('Tactical Link Error:', err);
+        console.error('Uplink Error:', err);
         setIsBroadcasting(false);
-        alert(`Link Error: ${err.message}`);
+        // Auto-retry after 5 seconds
+        setTimeout(startBroadcast, 5000);
       });
 
       call.on('close', () => {
-        console.warn('WebRTC Link closed by remote.');
+        console.warn('Uplink closed by Hub. Retrying...');
         setIsBroadcasting(false);
+        setTimeout(startBroadcast, 5000);
       });
 
       broadcastIntervalRef.current = call;
+
+    } catch (err) {
+      console.error('Broadcast failed to initiate:', err);
+      setIsBroadcasting(false);
+      // Auto-retry after 5 seconds
+      setTimeout(startBroadcast, 5000);
     }
   };
 
@@ -299,8 +330,32 @@ const MobileDroneNode = () => {
     }
   };
 
+  const handleManualStart = () => {
+    setNeedsGesture(false);
+    startCamera();
+  };
+
   return (
     <div className="fixed inset-0 bg-transparent text-white overflow-hidden font-mono select-none flex flex-col">
+      
+      {/* 0. START MISSION GESTURE OVERLAY */}
+      {needsGesture && (
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-500">
+           <div className="mb-8 p-6 rounded-full bg-cyan-500/10 border-2 border-cyan-500/30 animate-pulse">
+             <Camera className="w-16 h-16 text-cyan-400" />
+           </div>
+           <h1 className="text-3xl font-black italic tracking-tighter text-white mb-4 uppercase">Initialize Uplink</h1>
+           <p className="text-cyan-400/60 text-xs mb-10 tracking-[0.2em] uppercase max-w-xs">Establishing Secure P2P Tactical Connection to Command Center...</p>
+           
+           <button 
+             onClick={handleManualStart}
+             className="px-12 py-6 bg-cyan-500 text-black text-sm font-black uppercase tracking-[0.4em] rounded-2xl shadow-[0_0_50px_rgba(34,211,238,0.4)] active:scale-95 transition-all hover:bg-cyan-400"
+           >
+             Start Mission
+           </button>
+        </div>
+      )}
+
       {/* Edge Detection Overlay Canvas */}
       <canvas 
         ref={canvasRef} 
@@ -329,14 +384,13 @@ const MobileDroneNode = () => {
               width: '100vw', 
               height: '100vh', 
               objectFit: 'cover', 
-              zIndex: 0, 
-              backgroundColor: 'red' // indicator to see if element exists
+              zIndex: 0
             }}
             className="grayscale-[0.2] brightness-110"
           />
         )}
         
-        {!isPlaying && (
+        {!isPlaying && !needsGesture && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 opacity-20">
             {modelLoading ? (
               <div className="flex flex-col items-center gap-4">
@@ -419,56 +473,41 @@ const MobileDroneNode = () => {
           </div>
         </div>
 
-        {/* NUCLEAR FIX #3: Manual Force Play Kickstart Button */}
+        {/* NUCLEAR FIX #3: Manual Force Play Kickstart Button (only show if video doesn't play) */}
         {isPlaying && (
-          <button 
-            onClick={() => {
-              const vid = document.getElementById('tactical-camera-feed');
-              vid?.play().catch(alert);
-            }}
-            className="absolute top-24 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-rose-600 text-[10px] font-black rounded-lg border-2 border-white animate-bounce shadow-[0_0_20px_rgba(255,0,0,0.5)]"
-          >
-            FORCE PLAY VIDEO
-          </button>
+          <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2">
+             <button 
+                onClick={() => {
+                  const vid = document.getElementById('tactical-camera-feed');
+                  vid?.play().catch(console.error);
+                }}
+                className="p-3 bg-white/5 rounded-full border border-white/10 text-[8px] font-black uppercase text-white/40 tracking-widest hover:bg-white/10"
+              >
+                Force Optical Sync
+              </button>
+          </div>
         )}
       </div>
 
       {/* Control Bar: Bottom Section - Ensure z-index 20 */}
-      <div className="h-32 shrink-0 bg-slate-950 border-t border-white/5 px-8 flex items-center justify-between pb-4 z-20">
+      <div className="h-24 shrink-0 bg-slate-950 border-t border-white/5 px-8 flex items-center justify-between z-20">
         <button 
           onClick={toggleCamera}
-          className="w-14 h-14 rounded-2xl bg-slate-900 border border-white/5 flex items-center justify-center group active:scale-95 transition-all"
+          className="w-12 h-12 rounded-xl bg-slate-900 border border-white/5 flex items-center justify-center group active:scale-95 transition-all"
         >
-          <RefreshCw className="w-6 h-6 text-slate-400 group-hover:text-cyan-400" />
+          <RefreshCw className="w-5 h-5 text-slate-400 group-hover:text-cyan-400" />
         </button>
 
-        {!isPlaying ? (
-          <button 
-            onClick={startCamera}
-            className="px-10 py-5 bg-cyan-500 rounded-2xl text-[12px] font-bold uppercase tracking-[0.3em] flex items-center gap-3 shadow-[0_0_20px_#22d3ee20] active:scale-95 transition-all"
-          >
-            <Camera className="w-5 h-5" />
-            Init Sensors
-          </button>
-        ) : (
-          <button 
-            onClick={isBroadcasting ? stopBroadcast : startBroadcast}
-            className={`px-10 py-5 rounded-2xl text-[12px] font-bold uppercase tracking-[0.3em] flex items-center gap-3 transition-all active:scale-95 ${
-              isBroadcasting 
-                ? 'bg-rose-500 shadow-[0_0_30px_#f43f5e] animate-pulse' 
-                : 'bg-white/10 hover:bg-white/20 border border-white/10'
-            }`}
-          >
-            <Power className="w-5 h-5" />
-            {isBroadcasting ? 'Terminate Link' : 'Establish Link'}
-          </button>
-        )}
+        <div className="flex flex-col items-center gap-1">
+          <div className={`px-6 py-2.5 rounded-full border text-[10px] font-black uppercase tracking-widest transition-all ${isBroadcasting ? 'bg-cyan-500/10 border-cyan-500/50 text-cyan-400' : 'bg-slate-900 border-white/10 text-slate-500'}`}>
+            {isBroadcasting ? 'Broadcasting Active' : 'Uplink Standby'}
+          </div>
+        </div>
 
         <button 
-          onClick={() => isPlaying ? stopCamera() : startCamera()}
-          className="w-14 h-14 rounded-2xl bg-slate-900 border border-white/5 flex items-center justify-center group active:scale-95 transition-all"
+          className="w-12 h-12 rounded-xl bg-slate-900 border border-white/5 flex items-center justify-center group opacity-20 pointer-events-none"
         >
-          <Camera className={`w-6 h-6 transition-colors ${isPlaying ? 'text-cyan-400' : 'text-slate-500'}`} />
+          <Camera className="w-5 h-5 text-slate-500" />
         </button>
       </div>
     </div>
